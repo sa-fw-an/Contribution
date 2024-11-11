@@ -1,4 +1,4 @@
-# Generate Fake GitHub Contributions
+# GitHack - Generate Fake GitHub Contributions
 
 This script creates fake GitHub contributions by generating random commit dates and times within a specified date range and pushing them to a repository. Use this to make your GitHub profile appear more active with numerous commits across various dates!
 
