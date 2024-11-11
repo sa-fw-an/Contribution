@@ -3,7 +3,7 @@ import subprocess
 from datetime import datetime, timedelta
 import random
 
-repo_path = r'C:\Users\isafw\Coding no backup\Git\GitHack'
+repo_path = "."
 
 os.chdir(repo_path)
 
