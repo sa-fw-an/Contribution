@@ -35,4 +35,11 @@ for commit_date in random_dates:
 
 subprocess.run(["git", "push", "origin", "main"])
 
-print("Fake contributions pushed to GitHub!")
+with open("contribution.txt", "w") as file:
+    file.write("")
+
+subprocess.run(["git", "add", "contribution.txt"])
+subprocess.run(["git", "commit", "-m", "Push File"])
+subprocess.run(["git", "push", "origin", "main"])
+
+print("Fake contributions pushed to GitHub, and contribution.txt has been cleared!")
