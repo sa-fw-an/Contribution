@@ -7,11 +7,11 @@ repo_path = "."
 
 os.chdir(repo_path)
 
-start_date = datetime(2023, 11, 11)
-end_date = datetime(2024, 8, 31)
+start_date = datetime(2023, 11, 11) #yyyy, mm, dd
+end_date = datetime(2024, 8, 31) #yyyy, mm, dd
 
 random_dates = []
-for _ in range(100):
+for _ in range(50):
     random_date = start_date + timedelta(days=random.randint(0, (end_date - start_date).days))
     random_dates.append(random_date)
 
