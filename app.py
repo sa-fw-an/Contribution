@@ -4,17 +4,18 @@ import random
 from datetime import datetime, timedelta, date
 
 import streamlit as st
-
-# ----- Helper Functions ----- #
-
 def generate_fake_contributions(start_date: date, end_date: date, min_contrib: int, max_contrib: int):
     """
     Create fake GitHub contributions by making commits on a dummy file between start_date and end_date.
+    If min_contrib == 0, some days will have zero commits.
+    If min_contrib >= 1, each day will have between min_contrib and max_contrib commits.
     """
+    if max_contrib < min_contrib:
+        raise ValueError("max_contrib must be >= min_contrib")
+
     repo_path = "."
     os.chdir(repo_path)
 
-    # Convert to datetime for hour/minute math
     start_dt = datetime.combine(start_date, datetime.min.time())
     end_dt = datetime.combine(end_date, datetime.min.time())
 
@@ -22,26 +23,32 @@ def generate_fake_contributions(start_date: date, end_date: date, min_contrib: i
     dates = [start_dt + timedelta(days=i) for i in range(all_days)]
 
     for single_day in dates:
-        count = random.randint(min_contrib, max_contrib)
+        if min_contrib == 0:
+            count = random.randint(0, max_contrib)
+        else:
+            count = random.randint(min_contrib, max_contrib)
+        if count == 0:
+            continue
+
+        commit_times = []
         for _ in range(count):
-            # Random time within the day
             rand_time = single_day + timedelta(
                 hours=random.randint(0, 23),
                 minutes=random.randint(0, 59),
                 seconds=random.randint(0, 59),
             )
+            commit_times.append(rand_time)
+        commit_times.sort()
+
+        for rand_time in commit_times:
             iso_ts = rand_time.strftime("%Y-%m-%dT%H:%M:%S")
-            # Append to dummy file
             with open("contribution.txt", "a") as f:
                 f.write(f"Contribution at {iso_ts}\n")
-            # Git operations
             subprocess.run(["git", "add", "contribution.txt"], check=True)
             subprocess.run(
                 ["git", "commit", "-m", f"Contribution for {iso_ts}", "--date", iso_ts],
                 check=True,
             )
-
-    # Push commits, then reset file
     subprocess.run(["git", "push", "origin", "main"], check=True)
     with open("contribution.txt", "w") as f:
         f.write("")
@@ -49,8 +56,6 @@ def generate_fake_contributions(start_date: date, end_date: date, min_contrib: i
     subprocess.run(["git", "commit", "-m", "Reset contribution file"], check=True)
     subprocess.run(["git", "push", "origin", "main"], check=True)
 
-
-# ----- Custom CSS ----- #
 def local_css():
     st.markdown("""
     <style>
@@ -121,8 +126,6 @@ def local_css():
     </style>
     """, unsafe_allow_html=True)
 
-# ----- Streamlit UI ----- #
-
 st.set_page_config(
     page_title="GitHub Contribution Generator", 
     layout="centered",
@@ -131,7 +134,6 @@ st.set_page_config(
 
 local_css()
 
-# Header with custom styling
 st.markdown("""
 <div class="main-header">
     <h1>📈 GitHub Contribution Generator</h1>
@@ -139,7 +141,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Initialize session state defaults
 if "start_date" not in st.session_state:
     st.session_state.start_date = date.today() - timedelta(days=7)
 if "end_date" not in st.session_state:
@@ -149,11 +150,8 @@ if "min_contrib" not in st.session_state:
 if "max_contrib" not in st.session_state:
     st.session_state.max_contrib = 5
 
-# Input section with card-like styling
 with st.container():
-    
     st.subheader("⚙️ Configure Contribution Settings")
-    
     col1, col2 = st.columns(2)
     with col1:
         st.markdown("**Date Range**")
@@ -163,7 +161,6 @@ with st.container():
         st.session_state.end_date = st.date_input(
             "End Date", value=st.session_state.end_date
         )
-    
     with col2:
         st.markdown("**Contribution Count**")
         st.session_state.min_contrib = st.number_input(
@@ -182,32 +179,22 @@ with st.container():
             step=1,
             help="Maximum number of commits per day"
         )
-    
-    # Date range summary
-    delta_days = (st.session_state.end_date - st.session_state.start_date).days + 1
-    total_min = delta_days * st.session_state.min_contrib
-    total_max = delta_days * st.session_state.max_contrib
-    
 
-# Action buttons with improved styling
-gen_btn, space, clr_btn = st.columns([1, 0.1, 1])
+gen_btn, _, clr_btn = st.columns([1, 0.1, 1])
 with gen_btn:
     st.markdown('<div class="generate-btn">', unsafe_allow_html=True)
     generate_clicked = st.button("🚀 Generate Contributions")
     st.markdown('</div>', unsafe_allow_html=True)
-
 with clr_btn:
     st.markdown('<div class="clear-btn">', unsafe_allow_html=True)
     clear_clicked = st.button("🗑️ Reset Defaults")
     st.markdown('</div>', unsafe_allow_html=True)
 
-# Process button actions
 if generate_clicked:
-    # Basic validation
     if st.session_state.end_date < st.session_state.start_date:
         st.error("⚠️ End Date must be on or after Start Date.")
     elif st.session_state.max_contrib < st.session_state.min_contrib:
-        st.error("⚠️ Max Contributions must be greater than or equal to Min Contributions.")
+        st.error("⚠️ Max Contributions must be ≥ Min Contributions.")
     else:
         with st.spinner("Generating commits... this may take a while"):
             try:
@@ -229,9 +216,8 @@ if clear_clicked:
     st.session_state.max_contrib = 5
     st.experimental_rerun()
 
-# Footer
 st.markdown("""
 <div class="footer">
-    GitHub Contribution Generator • Use responsibly
+    GitHub Contribution Generator by Safwan Sayeed • Use responsibly
 </div>
 """, unsafe_allow_html=True)
